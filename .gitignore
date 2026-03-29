@@ -1,0 +1,4 @@
+﻿live-ops-keyboard.exe
+*.exe
+*.log
+.env

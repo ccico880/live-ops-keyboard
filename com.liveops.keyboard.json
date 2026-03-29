@@ -1,0 +1,9 @@
+{
+  "name": "com.liveops.keyboard",
+  "description": "LiveOps Keyboard Guard",
+  "path": "D:\\123\\live-ops-keyboard\\live-ops-keyboard.exe",
+  "type": "stdio",
+  "allowed_origins": [
+    "chrome-extension://kdidooccadmhifoomlbjhnfpokeffdam/"
+  ]
+}
