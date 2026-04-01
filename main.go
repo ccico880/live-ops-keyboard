@@ -23,6 +23,7 @@ import (
 	"path/filepath"
 	"runtime/debug"
 	"sync"
+	"sync/atomic"
 	"time"
 	"unsafe"
 
@@ -40,13 +41,15 @@ const (
 	WM_KEYDOWN     = 0x0100
 	WM_SYSKEYDOWN  = 0x0104
 
-	VK_NUMPAD0 = 0x60
-	VK_NUMPAD9 = 0x69
-	VK_DECIMAL = 0x6E
-	VK_ADD     = 0x6B // 小键盘 +（确认）
-	VK_RETURN  = 0x0D // Enter
-	VK_DELETE  = 0x2E // Delete（清空）
-	VK_BACK    = 0x08 // Backspace（清空）
+	VK_NUMPAD0  = 0x60
+	VK_NUMPAD9  = 0x69
+	VK_DECIMAL  = 0x6E // 小键盘 .（NumLock ON=小数点，OFF=Delete，有歧义，已弃用）
+	VK_DIVIDE   = 0x6F // 小键盘 /（无歧义，用于连按3次触发全局停止）
+	VK_ADD      = 0x6B // 小键盘 +（确认）
+	VK_RETURN   = 0x0D // Enter
+	VK_DELETE   = 0x2E // Delete（清空缓冲）
+	VK_BACK     = 0x08 // Backspace（清空缓冲）
+	VK_ESCAPE   = 0x1B // Escape（全局紧急停止）
 
 	LLKHF_EXTENDED = 0x01 // 小键盘 Enter 特有标志
 
@@ -219,6 +222,9 @@ var (
 
 	// 键盘事件队列：钩子回调只入队，绝不做 IO，防止阻塞消息泵
 	eventCh = make(chan KeyEvent, 128)
+
+	// 调试用：按键计数器（只记录前20个）
+	keyCount uint32
 )
 
 // ─────────────────────────────────────────────────────────────────
@@ -229,6 +235,13 @@ func keyboardProc(nCode int, wParam uintptr, lParam uintptr) uintptr {
 	if nCode >= 0 && (wParam == WM_KEYDOWN || wParam == WM_SYSKEYDOWN) {
 		ks := (*KBDLLHOOKSTRUCT)(unsafe.Pointer(lParam))
 		vk := ks.VkCode
+
+		// 调试：记录所有按键（前20个）
+		if vk >= 0 && vk <= 255 {
+			if atomic.AddUint32(&keyCount, 1) <= 20 {
+				log.Printf("[keyboard] 按键：vkCode=0x%X", vk)
+			}
+		}
 
 		var evt *KeyEvent
 
@@ -244,8 +257,14 @@ func keyboardProc(nCode int, wParam uintptr, lParam uintptr) uintptr {
 			// 小键盘 Enter（extended flag），普通 Enter 不触发
 			evt = &KeyEvent{Type: "KEY_EVENT", Key: "NumpadEnter", Code: "NumpadEnter", Digit: -1, Action: "confirm"}
 
-		case vk == VK_DELETE || vk == VK_BACK:
-			evt = &KeyEvent{Type: "KEY_EVENT", Key: "Delete", Code: "Delete", Digit: -1, Action: "clear"}
+		case vk == VK_DIVIDE:
+			// ★ 小键盘 / 键（NumpadDivide）——清空缓冲，连按3次触发全局停止
+			// 用 / 代替 . 是因为 . 键受 NumLock 影响，有歧义
+			evt = &KeyEvent{Type: "KEY_EVENT", Key: "NumpadDivide", Code: "NumpadDivide", Digit: -1, Action: "clear"}
+
+		case vk == VK_ESCAPE:
+			log.Printf("[keyboard] Escape 被捕获，准备发送 stop 事件")
+			evt = &KeyEvent{Type: "KEY_EVENT", Key: "Escape", Code: "Escape", Digit: -1, Action: "stop"}
 		}
 
 		if evt != nil {
