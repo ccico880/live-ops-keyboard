@@ -43,9 +43,8 @@ const (
 
 	VK_NUMPAD0  = 0x60
 	VK_NUMPAD9  = 0x69
-	VK_DECIMAL  = 0x6E // 小键盘 .（NumLock ON=小数点，OFF=Delete，有歧义，已弃用）
-	VK_DIVIDE   = 0x6F // 小键盘 /（无歧义，用于连按3次触发全局停止）
-	VK_ADD      = 0x6B // 小键盘 +（确认）
+	VK_DECIMAL  = 0x6E // 小键盘 .（已弃用，不再使用）
+	VK_DIVIDE   = 0x6F // 小键盘 /（连按3次触发全局停止，无 NumLock 歧义）
 	VK_RETURN   = 0x0D // Enter
 	VK_DELETE   = 0x2E // Delete（清空缓冲）
 	VK_BACK     = 0x08 // Backspace（清空缓冲）
@@ -250,16 +249,12 @@ func keyboardProc(nCode int, wParam uintptr, lParam uintptr) uintptr {
 			digit := int(vk - VK_NUMPAD0)
 			evt = &KeyEvent{Type: "KEY_EVENT", Digit: digit, Action: "digit"}
 
-		case vk == VK_ADD:
-			evt = &KeyEvent{Type: "KEY_EVENT", Key: "NumpadAdd", Code: "NumpadAdd", Digit: -1, Action: "confirm"}
-
 		case vk == VK_RETURN && (ks.Flags&LLKHF_EXTENDED) != 0:
 			// 小键盘 Enter（extended flag），普通 Enter 不触发
 			evt = &KeyEvent{Type: "KEY_EVENT", Key: "NumpadEnter", Code: "NumpadEnter", Digit: -1, Action: "confirm"}
 
 		case vk == VK_DIVIDE:
-			// ★ 小键盘 / 键（NumpadDivide）——清空缓冲，连按3次触发全局停止
-			// 用 / 代替 . 是因为 . 键受 NumLock 影响，有歧义
+			// ★ 小键盘 / 键（NumpadDivide）——连按3次触发全局停止，无 NumLock 歧义
 			evt = &KeyEvent{Type: "KEY_EVENT", Key: "NumpadDivide", Code: "NumpadDivide", Digit: -1, Action: "clear"}
 
 		case vk == VK_ESCAPE:
