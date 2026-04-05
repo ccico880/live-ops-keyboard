@@ -40,7 +40,7 @@ echo [2/2] Registering autostart...
 
 reg add "HKCU\Software\Microsoft\Windows\CurrentVersion\Run" ^
     /v "LiveOpsKeyboard" /t REG_SZ ^
-    /d "\"%EXE_PATH%\"" /f >nul 2>&1
+    /d "\"%INSTALL_DIR%\live-ops-keyboard-startup.bat\"" /f >nul 2>&1
 
 if %errorlevel% equ 0 (
     echo   Autostart registered: will start on every login.
@@ -66,7 +66,7 @@ set /p START_NOW=  Start guard now? (Y/N):
 if /i "!START_NOW!"=="Y" (
     echo.
     echo   Starting guard...
-    start "" "%EXE_PATH%"
+    start "" /B "%EXE_PATH%"
     timeout /t 1 /nobreak >nul
     echo   Guard started. Reload Chrome extension to connect.
 )
