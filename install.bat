@@ -62,14 +62,23 @@ echo.
 :: Kill any old instance before starting fresh
 taskkill /f /im live-ops-keyboard.exe >nul 2>&1
 
-set /p START_NOW=  Start guard now? (Y/N): 
+set /p START_NOW="Start guard now? (Y/N): "
 if /i "!START_NOW!"=="Y" (
     echo.
     echo   Starting guard...
-    start "" /B "%EXE_PATH%"
+    :: 使用 VBS 隐藏启动，不弹任何窗口
+    echo.Set o=CreateObject("WScript.Shell")> "%TEMP%\run_kb.vbs"
+    echo.o.Run """%EXE_PATH%""", 0, False>> "%TEMP%\run_kb.vbs"
+    cscript //nologo "%TEMP%\run_kb.vbs"
+    del "%TEMP%\run_kb.vbs"
     timeout /t 1 /nobreak >nul
     echo   Guard started. Reload Chrome extension to connect.
+    
+    :: 3秒后自动关闭
+    timeout /t 3 /nobreak >nul
+    exit /b 0
 )
 
-echo.
-pause
+:: 用户选择 N，自动退出
+timeout /t 2 /nobreak >nul
+exit /b 0
