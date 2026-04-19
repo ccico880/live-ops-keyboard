@@ -21,6 +21,7 @@ import (
 	"net/http"
 	"os"
 	"path/filepath"
+	"runtime"
 	"runtime/debug"
 	"sync"
 	"sync/atomic"
@@ -427,6 +428,14 @@ func isPortInUse(port string) bool {
 // ─────────────────────────────────────────────────────────────────
 
 func main() {
+	// 锁定 OS 线程：WH_KEYBOARD_LL 钩子必须在安装它的同一线程处理消息循环
+	// 否则 Go goroutine 调度切换线程会导致 NumLock 异常 / 输入光标乱跳
+	runtime.LockOSThread()
+
+	// 降低 GC 触发频率：减少 GC pause 导致钩子回调超时（默认 200ms Windows 会踢掉钩子）
+	// 钩子被踢后 Windows 会重放堆积按键，表现为光标乱跳 / 字符错位
+	debug.SetGCPercent(400)
+
 	// 全局 panic 保护，确保任何未捕获的 panic 都记录日志
 	defer func() {
 		if r := recover(); r != nil {

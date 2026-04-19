@@ -67,10 +67,7 @@ if /i "!START_NOW!"=="Y" (
     echo.
     echo   Starting guard...
     :: 使用 VBS 隐藏启动，不弹任何窗口
-    echo.Set o=CreateObject("WScript.Shell")> "%TEMP%\run_kb.vbs"
-    echo.o.Run """%EXE_PATH%""", 0, False>> "%TEMP%\run_kb.vbs"
-    cscript //nologo "%TEMP%\run_kb.vbs"
-    del "%TEMP%\run_kb.vbs"
+    cscript //nologo "%INSTALL_DIR%\run_kb.vbs"
     timeout /t 1 /nobreak >nul
     echo   Guard started. Reload Chrome extension to connect.
     

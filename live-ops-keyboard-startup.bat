@@ -17,10 +17,7 @@ if not exist "%EXE_PATH%" (
     exit /b 1
 )
 
-::: VBS 写到 bat 同目录（不依赖 TEMP，兼容任何路径）
-echo Set o=CreateObject("WScript.Shell")> "%SCRIPT_DIR%\run_kb.vbs"
-echo o.Run """%EXE_PATH%""", 0, False>> "%SCRIPT_DIR%\run_kb.vbs"
+::: VBS 与 bat 同目录，直接调用
 cscript //nologo "%SCRIPT_DIR%\run_kb.vbs"
-del "%SCRIPT_DIR%\run_kb.vbs"
 
 exit /b 0
